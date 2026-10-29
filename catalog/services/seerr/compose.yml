@@ -1,0 +1,28 @@
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:v3.0.1
+    restart: unless-stopped
+    init: true
+    user: "${PUID}:${PGID}"
+    environment:
+      TZ: ${TZ}
+      PORT: 5055
+      API_KEY: ${SEERR_API_KEY}
+    ports:
+      - "${SEERR_PORT}:5055"
+    volumes:
+      - ${DATA_DIR}/appdata/seerr:/app/config
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:5055/api/v1/settings/public'
+        ]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3

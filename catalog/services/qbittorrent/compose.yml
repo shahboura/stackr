@@ -1,0 +1,19 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.3.0
+    restart: unless-stopped
+    stop_grace_period: 10s
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      UMASK: ${UMASK}
+      WEBUI_PORT: ${QBITTORRENT_WEBUI_PORT}
+      TORRENTING_PORT: ${QBITTORRENT_TORRENTING_PORT}
+    ports:
+      - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
+      - "${QBITTORRENT_TORRENTING_PORT}:${QBITTORRENT_TORRENTING_PORT}"
+      - "${QBITTORRENT_TORRENTING_PORT}:${QBITTORRENT_TORRENTING_PORT}/udp"
+    volumes:
+      - ${DATA_DIR}/appdata/qbittorrent:/config
+      - ${DATA_DIR}:/data

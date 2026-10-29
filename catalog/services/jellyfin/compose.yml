@@ -1,0 +1,14 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:12.4ubu2604-ls57
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      UMASK: ${UMASK}
+    ports:
+      - "${JELLYFIN_PORT}:8096"
+    volumes:
+      - ${DATA_DIR}/appdata/jellyfin:/config
+      - ${DATA_DIR}/media:/data/media

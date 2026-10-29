@@ -1,0 +1,48 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/dist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+!tests/golden/**/.env
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Knowledge graph
+/graphify-out/
+
+# Local browser verification
+.playwright-browsers/
+.screenshots/
+
+# Local package manager config (may contain registry credentials)
+/.npmrc
+
+# Test output
+/coverage/
+/playwright-report/
+/test-results/
+*.log
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Local tool caches
+.cache/
+.turbo/

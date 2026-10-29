@@ -1,0 +1,43 @@
+name: Images
+
+on:
+  schedule:
+    # Mondays, 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Check every pinned image
+        run: bun run check:images
+
+      - name: Open a PR when the report changes
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: image-check
+          delete-branch: true
+          add-paths: reports/image-check.md
+          commit-message: 'chore: update weekly image check'
+          title: 'Weekly image check'
+          body: |
+            The weekly image check found a difference in a pinned image tag.
+
+            See `reports/image-check.md` for the table: every image in
+            `catalog/services/*/compose.yml` must resolve and publish `linux/arm64`.
+            Fix the tag in the affected `compose.yml`, then update the golden files
+            with `bun run test:update`.
