@@ -38,3 +38,7 @@ prerender checks. `images.yml` runs weekly to check pinned image tags and
 
 `PLAN.md` for decisions and milestones, `DESIGN.md` for the visual spec, and
 `LEARNINGS.md` for behaviour rules and rejected options.
+
+## Built with
+
+[agents-opencode](https://github.com/shahboura/agents-opencode) — the agent pack behind the build.
