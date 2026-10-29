@@ -41,4 +41,4 @@ prerender checks. `images.yml` runs weekly to check pinned image tags and
 
 ## Built with
 
-[agents-opencode](https://github.com/shahboura/agents-opencode) — the agent pack behind the build.
+[agents-opencode](https://github.com/shahboura/agents-opencode) — the agent pack used to build stackr.
