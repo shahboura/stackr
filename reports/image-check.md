@@ -6,11 +6,16 @@ Every image referenced by `catalog/services/*/compose.yml`, checked with `docker
 | Image | Tag resolves | linux/arm64 |
 | --- | --- | --- |
 | `amir20/dozzle:v11.3` | yes | yes |
+| `ghcr.io/advplyr/audiobookshelf:2.37.2` | yes | yes |
+| `ghcr.io/immich-app/immich-machine-learning:v3.3.5` | yes | yes |
+| `ghcr.io/immich-app/immich-server:v3.3.5` | yes | yes |
+| `ghcr.io/immich-app/postgres:16-vectorchord0.5.3-pgvector0.8.1` | yes | yes |
 | `ghcr.io/seerr-team/seerr:v3.0.1` | yes | yes |
 | `lscr.io/linuxserver/jellyfin:12.4ubu2604-ls57` | yes | yes |
 | `lscr.io/linuxserver/prowlarr:2.7.0` | yes | yes |
 | `lscr.io/linuxserver/qbittorrent:5.3.0` | yes | yes |
 | `lscr.io/linuxserver/radarr:6.4.4` | yes | yes |
 | `lscr.io/linuxserver/sonarr:4.0.20` | yes | yes |
+| `valkey/valkey:9.0.7-alpine3.24` | yes | yes |
 
 All images resolve and publish a linux/arm64 manifest.

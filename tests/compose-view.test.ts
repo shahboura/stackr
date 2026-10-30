@@ -34,6 +34,19 @@ describe('compose views', () => {
 		expect(annotateCompose(files.compose, [])).toBe(files.compose);
 	});
 
+	test('multi-container services annotate each container with its own image', () => {
+		const immich = bySlug(catalog, 'immich')[0];
+		const output = buildFiles({
+			services: [immich],
+			values: BASE_VALUES,
+			secrets: { DB_PASSWORD: 'abcdefghijklmnopqrstuvwxyz012345' }
+		});
+		const annotated = annotateCompose(output.compose, [immich]);
+		expect(annotated).toContain('# image ghcr.io/immich-app/immich-server:v3.3.5 | port 2283');
+		expect(annotated).toContain('# image ghcr.io/immich-app/postgres:16-vectorchord0.5.3-pgvector0.8.1');
+		expect(annotated).toContain('# image valkey/valkey:9.0.7-alpine3.24');
+	});
+
 	test('env preview redacts generated secret lines only', () => {
 		const redacted = redactEnv(files.env, ['SEERR_API_KEY']);
 		expect(redacted).toContain('SEERR_API_KEY=••••••••••••');

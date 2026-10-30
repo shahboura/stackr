@@ -13,9 +13,9 @@ bun run check      # typecheck
 bun test           # unit + golden tests
 ```
 
-The catalog has seven services: Jellyfin, Sonarr, Radarr, Prowlarr, qBittorrent,
-Seerr, and Dozzle. The wizard walks Host → Storage → Ports → Inputs → Review and
-downloads two files: `compose.yaml` and `.env`.
+The catalog has nine services: Jellyfin, Sonarr, Radarr, Prowlarr, qBittorrent,
+Seerr, Dozzle, Immich, and Audiobookshelf. The wizard walks Host → Storage → Ports →
+Inputs → Review and downloads two files: `compose.yaml` and `.env`.
 
 ## Deploy
 

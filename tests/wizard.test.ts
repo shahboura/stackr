@@ -1,14 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { loadCatalog } from './helpers/catalog';
+import { bySlug, loadCatalog } from './helpers/catalog';
 import {
 	buildValues,
+	dataDirs,
 	generateSecrets,
 	initialAnswers,
 	isValidDataDir,
 	parseIdOutput,
 	parseSelection,
 	secretCount,
-	selectionUrl
+	selectionUrl,
+	shellQuote
 } from '../src/lib/wizard/state';
 import { findConflicts, isValidPort, portFields, suggestPort, usedPorts } from '../src/lib/wizard/ports';
 
@@ -37,9 +39,20 @@ describe('wizard state', () => {
 
 	test('generates one value per service generator and validates shapes', () => {
 		const secrets = generateSecrets(catalog);
-		expect(Object.keys(secrets)).toEqual(['SEERR_API_KEY']);
+		expect(Object.keys(secrets).sort()).toEqual(['DB_PASSWORD', 'SEERR_API_KEY']);
+		expect(secrets.DB_PASSWORD).toMatch(/^[A-Za-z0-9]{32}$/);
 		expect(secrets.SEERR_API_KEY).toMatch(/^[0-9a-f]{32}$/);
-		expect(secretCount(catalog)).toBe(1);
+		expect(secretCount(catalog)).toBe(2);
+	});
+
+	test('data dirs include every host folder the selected services mount', () => {
+		const selected = bySlug(catalog, 'immich', 'audiobookshelf');
+		const dirs = dataDirs(selected, '/srv/media');
+		expect(dirs).toContain('/srv/media/appdata/immich/library');
+		expect(dirs).toContain('/srv/media/appdata/audiobookshelf/config');
+		expect(dirs).toContain('/srv/media/media/audiobooks');
+		expect(dirs).not.toContain('/srv/media');
+		expect(dirs).not.toContain('/srv/media/appdata/immich/postgres');
 	});
 
 	test('default ports do not collide; a collision is detected before the result', () => {
@@ -59,6 +72,16 @@ describe('wizard state', () => {
 		expect(isValidDataDir('/srv/media')).toBe(true);
 		expect(isValidDataDir('srv/media')).toBe(false);
 		expect(isValidDataDir('/srv/media/')).toBe(false);
+		expect(isValidDataDir('/srv/media/..')).toBe(false);
+		expect(isValidDataDir('/srv/media\nrm -rf ~')).toBe(false);
+		expect(isValidDataDir('/srv/media:1')).toBe(false);
+		expect(isValidDataDir('/srv/$media')).toBe(false);
+		expect(isValidDataDir('/srv/my media')).toBe(true);
+	});
+
+	test('shell quoting keeps spaces and apostrophes literal', () => {
+		expect(shellQuote('/srv/my media')).toBe("'/srv/my media'");
+		expect(shellQuote("/srv/it's")).toBe("'/srv/it'\\''s'");
 	});
 
 	test('numeric input values are coerced before they reach compose', () => {

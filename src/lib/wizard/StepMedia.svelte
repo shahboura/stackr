@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Service } from '../catalog/parse';
 	import type { Answers } from './state';
-	import { isValidDataDir } from './state';
+	import { dataDirs, isValidDataDir, shellQuote } from './state';
 	import { LAYOUTS } from './presets';
 	import OptionRow from '../ui/OptionRow.svelte';
 	import CopyButton from '../ui/CopyButton.svelte';
@@ -21,15 +21,32 @@
 		answers.dataDir = answers.dataDir.trim().replace(/\/+$/, '');
 	}
 
-	let commands = $derived(`mkdir -p ${answers.dataDir}/{appdata,downloads,media/movies,media/tv}
-sudo chown -R ${answers.puid || '1000'}:${answers.pgid || '1000'} ${answers.dataDir}`);
+	let commands = $derived.by(() => {
+		const base = [
+			`${answers.dataDir}/appdata`,
+			`${answers.dataDir}/downloads`,
+			`${answers.dataDir}/media/audiobooks`,
+			`${answers.dataDir}/media/movies`,
+			`${answers.dataDir}/media/music`,
+			`${answers.dataDir}/media/podcasts`,
+			`${answers.dataDir}/media/tv`
+		];
+		const folders = [...new Set([...base, ...dataDirs(selected, answers.dataDir)])].sort();
+		const puid = /^\d{1,10}$/.test(answers.puid) ? answers.puid : '1000';
+		const pgid = /^\d{1,10}$/.test(answers.pgid) ? answers.pgid : '1000';
+		return `mkdir -p ${folders.map(shellQuote).join(' ')}
+sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
+	});
 
 	let tree = $derived(`${answers.dataDir}
 ├── appdata/     one folder per container
 ├── downloads/   qBittorrent saves here
 └── media/
-    ├── movies/  Radarr and Jellyfin
-    └── tv/      Sonarr and Jellyfin`);
+    ├── audiobooks/  Audiobookshelf
+    ├── movies/      Radarr and Jellyfin
+    ├── music/       Jellyfin
+    ├── podcasts/    Audiobookshelf
+    └── tv/          Sonarr and Jellyfin`);
 </script>
 
 <section class="step">
@@ -94,7 +111,7 @@ sudo chown -R ${answers.puid || '1000'}:${answers.pgid || '1000'} ${answers.data
 			Hardlinks only work when the download folder and the library are on the same filesystem. Run this
 			after creating the folders — the two numbers must match:
 		</p>
-		<pre class="mono stat">stat -c %d {answers.dataDir}/downloads {answers.dataDir}/media</pre>
+		<pre class="mono stat">stat -c %d {shellQuote(`${answers.dataDir}/downloads`)} {shellQuote(`${answers.dataDir}/media`)}</pre>
 		<p class="muted">
 			Different numbers mean Sonarr and Radarr will copy every import. The stack still works; the disk
 			usage doubles.

@@ -3,7 +3,8 @@
 A static site that generates `compose.yaml` + `.env` for a self-hosted stack, in the
 browser, with secrets that are correct per service.
 
-**Status:** approved. M0 (scaffold) complete.
+**Status:** approved. M0 (scaffold) complete. The v1 catalog shipped with seven services;
+Immich and Audiobookshelf were added afterwards (see `README.md`).
 
 Companion documents: `DESIGN.md` (visual spec) and `LEARNINGS.md` (behavioural rules, conventions, and things deliberately rejected). Read both before adding a feature.
 

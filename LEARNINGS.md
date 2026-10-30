@@ -64,6 +64,20 @@ trap we already hit, or something deliberately rejected.
   YAML is valid.
 - Weekly `docker manifest inspect` per image: tag resolves **and** `linux/arm64` exists.
 - Pin minor tags (`:1.20`). Never `:latest`, never digests.
+- **PUID/PGID are not universal.** LinuxServer images read them as environment
+  variables; Audiobookshelf silently ignores them and needs `user:`. Seerr and the
+  Immich containers also use `user:`. Check the image docs, never copy the vars.
+- **A multi-container service names its own dependencies.** Immich sets
+  `DB_HOSTNAME` and `REDIS_HOSTNAME` explicitly; the `hostname:` key is not a Docker
+  DNS alias, so `hostname: database` next to a service named `immich-db` does not
+  make `database` resolve.
+- **Create bind-mount folders before `compose up`.** Docker creates missing folders
+  as root; any container with `user:` then fails to write. The storage step derives
+  these folders from the selected compose fragments.
+- **Some databases cannot live under `DATA_DIR`.** Immich's Postgres image refuses
+  NFS, SMB and FUSE paths (the Unraid preset is FUSE), so its data goes in the
+  `immich-pgdata` Docker volume on the Docker data root. Do not "fix" it back to a
+  bind mount without checking the image's entrypoint.
 
 ## 4. Toolchain notes (SvelteKit 3 / Svelte 5)
 

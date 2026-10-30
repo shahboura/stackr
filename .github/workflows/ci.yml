@@ -36,14 +36,16 @@ jobs:
 
       - name: Prerendered pages exist
         run: |
-          for slug in jellyfin sonarr radarr prowlarr qbittorrent seerr dozzle; do
+          for slug in jellyfin sonarr radarr prowlarr qbittorrent seerr dozzle immich audiobookshelf; do
             test -f "dist/services/$slug.html" || { echo "missing dist/services/$slug.html"; exit 1; }
           done
           test -f dist/sitemap.xml
           test -f dist/robots.txt
 
       - name: Generated compose is valid
-        run: docker compose -f tests/golden/media/compose.yaml --env-file tests/golden/media/.env config -q
+        run: |
+          docker compose -f tests/golden/media/compose.yaml --env-file tests/golden/media/.env config -q
+          docker compose -f tests/golden/new-services/compose.yaml --env-file tests/golden/new-services/.env config -q
 
       - name: Golden files are in sync
         run: git diff --exit-code -- tests/golden
