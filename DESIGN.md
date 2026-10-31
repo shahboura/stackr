@@ -70,16 +70,22 @@ generated secrets. It stays navy on a white page and lightens slightly in dark m
 
 Line height 1.5 for body, 1.03–1.08 for display.
 
-## 3b. Wordmark
+## 3b. Logo
 
 ```text
-stackr        ← "stack" in --ink, final "r" in --accent
+[ring + nine tiles]  stackr        ← mark, then "stack" in --ink, final "r" in --accent
 ```
 
-- Inter Variable, 600, 16px, tracking `-0.03em`.
-- Only the last `r` is accented. Never the whole word, never an icon next to it.
-- No logotype file, no SVG mark: the word *is* the logo.
-- Same treatment in the nav, the footer, and the favicon.
+- The mark is a kamon: a ring holding nine service tiles, the centre one a blue
+  diamond. It is the catalog — nine services, one chosen. It never replaces the
+  wordmark; it sits to its left.
+- Primary mark: ring + nine tiles. At 16–20px the tiles soften into texture; the
+  ring and the blue diamond carry the mark.
+- Lockup: mark at 1× the wordmark size, `0.5em` gap, optically centred. The mark
+  box, the word box and the cap height share the same centre line.
+- Wordmark: Inter Variable, 600, 16px, tracking `-0.03em`. The `s` is drawn at
+  Inter's x-height so it can stand alone; only the final `r` is accented.
+- Favicon: the mark alone on a `#fbfbfd` tile.
 
 ## 4. Screens
 
