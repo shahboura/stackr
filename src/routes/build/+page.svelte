@@ -691,7 +691,7 @@
 		font-size: 11.5px;
 		line-height: 1.65;
 		color: var(--ink-2);
-		max-height: 320px;
+		max-height: 420px;
 		overflow: auto;
 		white-space: pre;
 	}
@@ -819,7 +819,7 @@
 		}
 
 		.code {
-			max-height: 220px;
+			max-height: 300px;
 		}
 
 		.status {

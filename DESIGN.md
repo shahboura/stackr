@@ -124,7 +124,8 @@ is no three-button pill.
 - At ≥1024px the preview is sticky while the options scroll. That is deliberate: the
   artifact stays in view while the user answers.
 - Below 1024px the preview collapses to a 56px `Preview · compose.yaml · Show` bar, so the
-  first question stays near the top. Code is capped at ~64vh on desktop.
+  first question stays near the top. Code is capped at ~64vh on desktop, 420px when expanded
+  below 1024px, and 300px on phones.
 - Host is a five-up preset switch (Linux, Unraid, Synology, Windows, macOS) with one detail
   panel; storage layout keeps the radio rows.
 - Footer status bar: `Ports — no conflicts · Hardlinks — one mount/may copy · Secrets — 4`,
