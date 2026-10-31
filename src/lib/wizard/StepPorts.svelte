@@ -40,12 +40,6 @@
 </script>
 
 <section class="step">
-	<h2>Which ports should the stack use?</h2>
-	<p class="lede">
-		Every app gets its own host port. A collision is caught here, before anything is generated or
-		downloaded.
-	</p>
-
 	<div class="card">
 		<div class="card-head">
 			<span class="mono label">Host ports</span>
@@ -90,21 +84,7 @@
 	.step {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
-	}
-
-	h2 {
-		font-size: clamp(26px, 3.4vw, 34px);
-		line-height: 1.1;
-		letter-spacing: -0.03em;
-		font-weight: 600;
-	}
-
-	.lede {
-		color: var(--ink-2);
-		font-size: 17px;
-		max-width: 62ch;
-		margin-top: -8px;
+		gap: 18px;
 	}
 
 	.card {

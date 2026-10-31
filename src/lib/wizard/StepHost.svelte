@@ -44,12 +44,6 @@
 </script>
 
 <section class="step">
-	<h2>Where does this stack run?</h2>
-	<p class="lede">
-		The preset only fills in paths and user IDs. Nothing is installed or changed on the host from this
-		page.
-	</p>
-
 	<div class="options" role="radiogroup" aria-label="Host preset">
 		{#each HOSTS as host (host.id)}
 			<OptionRow
@@ -123,21 +117,7 @@
 	.step {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
-	}
-
-	h2 {
-		font-size: clamp(26px, 3.4vw, 34px);
-		line-height: 1.1;
-		letter-spacing: -0.03em;
-		font-weight: 600;
-	}
-
-	.lede {
-		color: var(--ink-2);
-		font-size: 17px;
-		max-width: 62ch;
-		margin-top: -10px;
+		gap: 18px;
 	}
 
 	.options {

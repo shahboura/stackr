@@ -8,11 +8,9 @@
 	import SiteFooter from '#lib/ui/SiteFooter.svelte';
 	import ThemeSwitch from '#lib/ui/ThemeSwitch.svelte';
 	import Wordmark from '#lib/ui/Wordmark.svelte';
-	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
-	let buildRoute = $derived(page.url.pathname === '/build');
 </script>
 
 <svelte:head>
@@ -24,11 +22,7 @@
 
 <header class="nav">
 	<div class="container nav-inner">
-		{#if buildRoute}
-			<a class="brand back-link" href="/">Catalog</a>
-		{:else}
-			<a class="brand" href="/"><Wordmark /></a>
-		{/if}
+		<a class="brand" href="/" aria-label="stackr"><Wordmark /></a>
 		<span class="tagline">compose, without the guesswork</span>
 		<div class="theme-wrap"><ThemeSwitch /></div>
 	</div>
@@ -66,11 +60,6 @@
 
 	.brand:hover {
 		text-decoration: none;
-	}
-
-	.back-link {
-		font-size: 12.5px;
-		color: var(--ink-2);
 	}
 
 	.theme-wrap {

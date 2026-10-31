@@ -6,7 +6,6 @@
 	import { annotateCompose } from '#lib/compose/annotate';
 	import { redactEnv } from '#lib/compose/redact';
 	import CopyButton from '#lib/ui/CopyButton.svelte';
-	import Wordmark from '#lib/ui/Wordmark.svelte';
 	import StepHost from '#lib/wizard/StepHost.svelte';
 	import StepMedia from '#lib/wizard/StepMedia.svelte';
 	import StepPorts from '#lib/wizard/StepPorts.svelte';
@@ -30,6 +29,28 @@
 
 	const STEPS = ['Host', 'Storage', 'Ports', 'Inputs', 'Review'];
 	const CTA_LABELS = ['Continue', 'Continue', 'Continue', 'Review', 'Continue'];
+	const STEP_COPY = [
+		{
+			title: 'Where does this stack run?',
+			note: 'The preset only fills in paths and user IDs. Nothing is installed or changed on the host from this page.'
+		},
+		{
+			title: 'Where should the files live?',
+			note: 'One folder holds downloads, the library and app config. That is what lets the arr apps hardlink a finished download instead of copying it.'
+		},
+		{
+			title: 'Which ports should the stack use?',
+			note: 'Every app gets its own host port. A collision is caught here, before anything is generated or downloaded.'
+		},
+		{
+			title: 'Anything only you can answer?',
+			note: 'Time zone is the only input. Secrets are generated here, in this browser, and shown in full — there is nothing to write down from a log.'
+		},
+		{
+			title: 'Review before you download',
+			note: 'Two files come out: a compose file that references variables, and a .env with the values. Keep them in the same folder.'
+		}
+	];
 
 	let ready = $state(false);
 	let step = $state(0);
@@ -39,6 +60,10 @@
 	let result = $state<BuildResult | null>(null);
 	let error = $state('');
 	let previewTab = $state<'compose' | 'env'>('compose');
+	let previewOpen = $state(true);
+	let previewTouched = $state(false);
+	let showPreviewButton = $state<HTMLButtonElement>();
+	let hidePreviewButton = $state<HTMLButtonElement>();
 	let annotated = $state(false);
 	let canGoBack = $state(false);
 
@@ -52,6 +77,13 @@
 		step = currentStep();
 		result = null;
 		window.scrollTo(0, 0);
+		void focusStepHeading();
+	}
+
+	/** Announce the new question after a step change, not just the sticky CTA. */
+	async function focusStepHeading(): Promise<void> {
+		await tick();
+		document.getElementById('step-title')?.focus({ preventScroll: true });
 	}
 
 	onMount(() => {
@@ -61,14 +93,23 @@
 			goto('/', { replaceState: true });
 			return;
 		}
+		const desktop = window.matchMedia('(min-width: 1024px)');
+		const syncPreview = (event: MediaQueryListEvent) => {
+			if (!previewTouched) previewOpen = event.matches;
+		};
 		selected = picked;
 		step = currentStep();
 		answers = initialAnswers(picked, 'linux');
 		answers.tz = detectTimezone();
 		secrets = generateSecrets(picked);
+		previewOpen = desktop.matches;
 		ready = true;
+		desktop.addEventListener('change', syncPreview);
 		window.addEventListener('popstate', onPopState);
-		return () => window.removeEventListener('popstate', onPopState);
+		return () => {
+			desktop.removeEventListener('change', syncPreview);
+			window.removeEventListener('popstate', onPopState);
+		};
 	});
 
 	let conflicts = $derived(findConflicts(selected, answers.ports));
@@ -152,9 +193,9 @@
 	function syncUrl(mode: 'push' | 'replace'): void {
 		const params = new URLSearchParams();
 		params.set('s', selected.map((service) => service.slug).join(','));
-		params.set('step', String(step));
+		params.set('step', String(Math.min(step, 4)));
 		const url = `#${params}`;
-		const state = { ...history.state, stackrStep: step };
+		const state = { ...history.state, stackrStep: Math.min(step, 4) };
 		if (mode === 'push') history.pushState(state, '', url);
 		else history.replaceState(state, '', url);
 	}
@@ -172,6 +213,7 @@
 		await tick();
 		syncUrl('replace');
 		window.scrollTo(0, 0);
+		await focusStepHeading();
 	}
 
 	async function next(): Promise<void> {
@@ -182,6 +224,7 @@
 		await tick();
 		syncUrl('push');
 		window.scrollTo(0, 0);
+		await focusStepHeading();
 	}
 
 	async function generate(): Promise<void> {
@@ -202,6 +245,20 @@
 	function advance(): void {
 		if (step === 4) void generate();
 		else void next();
+	}
+
+	async function openPreview(): Promise<void> {
+		previewTouched = true;
+		previewOpen = true;
+		await tick();
+		hidePreviewButton?.focus();
+	}
+
+	async function closePreview(): Promise<void> {
+		previewTouched = true;
+		previewOpen = false;
+		await tick();
+		showPreviewButton?.focus();
 	}
 </script>
 
@@ -234,13 +291,13 @@
 				await tick();
 				syncUrl('replace');
 				window.scrollTo(0, 0);
+				await focusStepHeading();
 			}}
 		/>
 	</main>
 {:else}
 	<main class="container shell">
 		<div class="progress">
-			<a class="wizard-mark" href="/" aria-label="stackr"><Wordmark size={16} /></a>
 			<button type="button" class="back" onclick={back}>Back</button>
 			<div
 				class="segments"
@@ -258,14 +315,33 @@
 			<span class="step-count mono">Step {step + 1} of 5 · {STEPS[step]}</span>
 		</div>
 
+		<header class="step-head">
+			<h2 id="step-title" tabindex="-1">{STEP_COPY[step].title}</h2>
+			<p class="step-note">{STEP_COPY[step].note}</p>
+		</header>
+
 		<div class="wizard">
 			<aside class="preview" aria-label="Generated compose preview">
-				<div class="code-card">
+				<button
+					type="button"
+					class="preview-open"
+					bind:this={showPreviewButton}
+					aria-expanded={!previewOpen}
+					aria-controls="preview-panel"
+					hidden={previewOpen}
+					onclick={openPreview}
+				>
+					<span class="mono preview-label">Preview</span>
+					<span class="mono preview-file">{previewTab === 'env' ? '.env' : 'compose.yaml'}</span>
+					<span class="preview-show">Show</span>
+				</button>
+				<div class="code-card" id="preview-panel" hidden={!previewOpen}>
 					<div class="code-head">
 						<div class="code-tabs" role="group" aria-label="Preview file">
 							<button
 								type="button"
 								class="code-tab mono"
+								aria-controls="preview-panel"
 								aria-pressed={previewTab === 'compose'}
 								onclick={() => (previewTab = 'compose')}
 							>
@@ -274,27 +350,42 @@
 							<button
 								type="button"
 								class="code-tab mono"
+								aria-controls="preview-panel"
 								aria-pressed={previewTab === 'env'}
 								onclick={() => (previewTab = 'env')}
 							>
 								.env
 							</button>
 						</div>
-						{#if !preview.error}
-							<div class="code-actions">
-								{#if previewTab === 'compose'}
-									<button
-										type="button"
-										class="annotate mono"
-										aria-pressed={annotated}
-										onclick={() => (annotated = !annotated)}
-									>
-										{annotated ? 'Plain' : 'Annotated'}
-									</button>
-								{/if}
+						<div class="code-actions">
+							{#if !preview.error && previewTab === 'compose'}
+								<button
+									type="button"
+									class="annotate mono"
+									aria-pressed={annotated}
+									onclick={() => (annotated = !annotated)}
+								>
+									Annotated
+								</button>
+							{/if}
+							{#if !preview.error}
 								<CopyButton text={copyText} compact label="Copy preview" />
-							</div>
-						{/if}
+							{/if}
+							<button
+								type="button"
+								class="collapse"
+								bind:this={hidePreviewButton}
+								aria-expanded={previewOpen}
+								aria-controls="preview-panel"
+								aria-label="Hide preview"
+								title="Hide preview"
+								onclick={closePreview}
+							>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+									<path d="m18 15-6-6-6 6" />
+								</svg>
+							</button>
+						</div>
 					</div>
 					{#if preview.error}
 						<p class="preview-error" role="alert">{preview.error}</p>
@@ -305,7 +396,7 @@
 				</div>
 			</aside>
 
-			<section class="options" aria-label={STEPS[step]}>
+			<section class="options" aria-labelledby="step-title">
 				{#if step === 0}
 					<StepHost bind:answers {selected} serviceCount={selected.length} />
 				{:else if step === 1}
@@ -373,14 +464,6 @@
 		margin-bottom: 22px;
 	}
 
-	.wizard-mark {
-		display: inline-flex;
-		align-items: center;
-		flex-shrink: 0;
-		min-height: 44px;
-		text-decoration: none;
-	}
-
 	.back {
 		display: inline-flex;
 		align-items: center;
@@ -397,6 +480,7 @@
 
 	.back:hover {
 		background: var(--surface-2);
+		color: var(--ink);
 	}
 
 	.segments {
@@ -423,18 +507,83 @@
 		white-space: nowrap;
 	}
 
+	.step-head {
+		display: grid;
+		gap: 4px;
+		margin-bottom: 18px;
+	}
+
+	.step-head h2 {
+		font-size: clamp(26px, 3.4vw, 34px);
+		line-height: 1.1;
+		letter-spacing: -0.03em;
+		font-weight: 600;
+		text-wrap: balance;
+	}
+
+	.step-note {
+		max-width: 62ch;
+		color: var(--ink-2);
+		font-size: 15.5px;
+		line-height: 1.5;
+	}
+
 	.wizard {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 20px;
+		gap: 18px;
 		margin-bottom: 28px;
 	}
 
 	.preview {
 		min-width: 0;
+	}
+
+	.preview-open {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		width: 100%;
+		min-height: 56px;
+		padding: 0 16px;
+		border: 0;
+		border-radius: var(--radius);
+		background: var(--surface);
+		box-shadow: var(--shadow);
+		color: var(--ink);
+		text-align: left;
+	}
+
+	.preview-open:hover {
 		background: var(--surface-2);
-		border-radius: 20px;
-		padding: 14px;
+	}
+
+	.preview-open:hover .preview-show {
+		color: var(--ink);
+	}
+
+	.preview-label {
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--ink-3);
+	}
+
+	.preview-file {
+		font-size: 11.5px;
+		color: var(--ink-2);
+	}
+
+	.preview-show {
+		margin-left: auto;
+		color: var(--accent);
+		font-size: 13px;
+		font-weight: 500;
+	}
+
+	.preview-open[hidden],
+	.code-card[hidden] {
+		display: none;
 	}
 
 	.code-card {
@@ -446,9 +595,10 @@
 
 	.code-head {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 12px;
+		gap: 8px 12px;
 		padding: 10px 14px;
 		border-bottom: 1px solid var(--line-soft);
 	}
@@ -485,7 +635,29 @@
 		display: flex;
 		align-items: center;
 		flex-shrink: 0;
-		gap: 8px;
+		gap: 4px;
+	}
+
+	.collapse {
+		display: grid;
+		place-items: center;
+		width: 44px;
+		min-height: 44px;
+		padding: 0;
+		border: 0;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--ink-3);
+	}
+
+	.collapse:hover {
+		background: var(--surface-2);
+		color: var(--ink);
+	}
+
+	.collapse svg {
+		width: 16px;
+		height: 16px;
 	}
 
 	.annotate {
@@ -584,6 +756,18 @@
 	}
 
 	@media (min-width: 1024px) {
+		.step-head {
+			grid-template-columns: minmax(0, 1fr) 520px;
+			align-items: end;
+			gap: 28px;
+			margin-bottom: 20px;
+		}
+
+		.step-note {
+			max-width: 46ch;
+			font-size: 15px;
+		}
+
 		.wizard {
 			grid-template-columns: minmax(0, 1fr) 520px;
 			gap: 28px;
@@ -596,7 +780,7 @@
 		}
 
 		.code {
-			max-height: calc(100dvh - 210px);
+			max-height: max(220px, 56dvh);
 		}
 	}
 

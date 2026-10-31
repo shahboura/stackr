@@ -7,7 +7,6 @@
 	import { SECRET_NOTES } from '../secrets/generate';
 	import { redactEnv } from '../compose/redact';
 	import CopyButton from './CopyButton.svelte';
-	import Wordmark from './Wordmark.svelte';
 	import SecretValue from './SecretValue.svelte';
 	import { downloadFile } from './download';
 	import { fileMeta } from './format';
@@ -66,6 +65,14 @@
 		const last = image.split('/').pop() ?? image;
 		return last.includes(':') ? last.split(':').pop()! : last;
 	}
+
+	onMount(() => {
+		const query = window.matchMedia('(min-width: 640px)');
+		const update = (event: MediaQueryListEvent) => (wide = event.matches);
+		wide = query.matches;
+		query.addEventListener('change', update);
+		return () => query.removeEventListener('change', update);
+	});
 </script>
 
 <section class="result">
@@ -87,7 +94,7 @@
 
 	{#snippet checksBlock()}
 		<section class="checks">
-			<h3 class="mono checks-title">Checks</h3>
+			<h2 class="mono checks-title">Checks</h2>
 			<dl>
 				<div>
 					<dt>Ports</dt>
@@ -116,7 +123,6 @@
 	{/snippet}
 
 	<header class="head">
-		<div class="result-mark"><Wordmark size={16} /></div>
 		<h1 id="result-heading" tabindex="-1">Your stack is ready.</h1>
 		<p class="lede">
 			Check the ports and secrets, then download both files. Nothing leaves this browser.
@@ -128,16 +134,16 @@
 		</div>
 	</header>
 
-	{#if wide}
-		<div class="layout">
-			<section class="tech" aria-label="Topology and generated secrets">
-				<div class="tech-head">
-					<span class="mono tech-label">Topology</span>
-					<span class="mono tech-count">
-						{selected.length} {selected.length === 1 ? 'service' : 'services'} · {secrets.length}
-						{secrets.length === 1 ? 'secret' : 'secrets'}
-					</span>
-				</div>
+	<div class="layout">
+		<section class="tech" aria-label="Topology and generated secrets">
+			<div class="tech-head">
+				<span class="mono tech-label">Topology</span>
+				<span class="mono tech-count">
+					{selected.length} {selected.length === 1 ? 'service' : 'services'}
+					{#if secrets.length > 0} · {secrets.length} {secrets.length === 1 ? 'secret' : 'secrets'}{/if}
+				</span>
+			</div>
+			{#if wide}
 				<div class="nodes">
 					{#each selected as service (service.slug)}
 						{@const port = hostPort(service)}
@@ -148,58 +154,7 @@
 						</div>
 					{/each}
 				</div>
-				{@render secretsBlock()}
-				{#if hasDozzle}
-					<p class="tech-warn">
-						Dozzle mounts the Docker socket: root-equivalent control of the host. Keep its port on
-						the LAN.
-					</p>
-				{/if}
-			</section>
-
-			<div class="side">
-				{#each files as file (file.name)}
-					<article class="card">
-						<header class="card-head">
-							<div>
-								<h3 class="mono">{file.name}</h3>
-								<p class="mono meta">{fileMeta(file.text)}</p>
-							</div>
-							<div class="actions">
-								<CopyButton text={file.text} compact label={`Copy ${file.name}`} />
-								<button
-									type="button"
-									class="action icon-only"
-									aria-label={`Download ${file.name}`}
-									title={`Download ${file.name}`}
-									onclick={() => downloadFile(file.name, file.text)}
-								>
-									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-										<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-										<polyline points="7 10 12 15 17 10" />
-										<line x1="12" x2="12" y1="15" y2="3" />
-									</svg>
-								</button>
-							</div>
-						</header>
-						<p class="hint">{file.hint}</p>
-						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-						<pre class="mono code" tabindex="0" role="region" aria-label={file.name}>{displayText(file.name, file.text)}</pre>
-					</article>
-				{/each}
-				{@render checksBlock()}
-			</div>
-		</div>
-	{:else}
-		<div class="stack">
-			<section class="tech" aria-label="Topology and generated secrets">
-				<div class="tech-head">
-					<span class="mono tech-label">Topology</span>
-					<span class="mono tech-count">
-					{selected.length} {selected.length === 1 ? 'service' : 'services'}
-					{#if secrets.length > 0} · {secrets.length} {secrets.length === 1 ? 'secret' : 'secrets'}{/if}
-				</span>
-				</div>
+			{:else}
 				<div class="spine">
 					{#each selected as service (service.slug)}
 						{@const port = hostPort(service)}
@@ -218,63 +173,67 @@
 						<span class="volume-note">shared volume</span>
 					</div>
 				{/if}
-				{@render secretsBlock()}
-				{#if hasDozzle}
-					<p class="tech-warn">
-						Dozzle mounts the Docker socket: root-equivalent control of the host. Keep its port on
-						the LAN.
-					</p>
-				{/if}
-			</section>
+			{/if}
+			{@render secretsBlock()}
+			{#if hasDozzle}
+				<p class="tech-warn">
+					Dozzle mounts the Docker socket: root-equivalent control of the host. Keep its port on
+					the LAN.
+				</p>
+			{/if}
+		</section>
 
-			<div class="tabs" role="group" aria-label="Files">
-				<button
-					type="button"
-					class="tab mono"
-					aria-pressed={tab === 'compose'}
-					onclick={() => (tab = 'compose')}
-				>
-					compose.yaml
-				</button>
-				<button
-					type="button"
-					class="tab mono"
-					aria-pressed={tab === 'env'}
-					onclick={() => (tab = 'env')}
-				>
-					.env
-				</button>
+		<article class="pane">
+			<header class="pane-head">
+				<div class="tabs" role="group" aria-label="Files">
+					<button
+						type="button"
+						class="tab mono"
+						aria-controls="file-preview"
+						aria-pressed={tab === 'compose'}
+						onclick={() => (tab = 'compose')}
+					>
+						compose.yaml
+					</button>
+					<button
+						type="button"
+						class="tab mono"
+						aria-controls="file-preview"
+						aria-pressed={tab === 'env'}
+						onclick={() => (tab = 'env')}
+					>
+						.env
+					</button>
+				</div>
+				<div class="actions">
+					<CopyButton text={shown.text} compact label={`Copy ${shown.name}`} />
+					<button
+						type="button"
+						class="action icon-only"
+						aria-label={`Download ${shown.name}`}
+						title={`Download ${shown.name}`}
+						onclick={() => downloadFile(shown.name, shown.text)}
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="7 10 12 15 17 10" />
+							<line x1="12" x2="12" y1="15" y2="3" />
+						</svg>
+					</button>
+				</div>
+			</header>
+			<div class="file-title">
+				<h2 class="mono">{shown.name}</h2>
+				<p class="mono meta">{fileMeta(shown.text)}</p>
 			</div>
+			<p class="hint">{shown.hint}</p>
+			<p class="sr-only" role="status" aria-live="polite">{shown.name} shown</p>
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<pre id="file-preview" class="mono code" tabindex="0" role="region" aria-label={shown.name}>{displayText(shown.name, shown.text)}</pre>
+		</article>
 
-			<div class="pane">
-				<header class="pane-head">
-					<div>
-						<h3 class="mono">{shown.name}</h3>
-						<p class="mono meta">{fileMeta(shown.text)}</p>
-					</div>
-					<div class="actions">
-						<CopyButton text={shown.text} compact label={`Copy ${shown.name}`} />
-						<button
-							type="button"
-							class="action icon-only"
-							aria-label={`Download ${shown.name}`}
-							title={`Download ${shown.name}`}
-							onclick={() => downloadFile(shown.name, shown.text)}
-						>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-								<polyline points="7 10 12 15 17 10" />
-								<line x1="12" x2="12" y1="15" y2="3" />
-							</svg>
-						</button>
-					</div>
-				</header>
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre class="mono code" tabindex="0" role="region" aria-label={shown.name}>{displayText(shown.name, shown.text)}</pre>
-			</div>
-			{@render checksBlock()}
-		</div>
-	{/if}
+		{@render checksBlock()}
+	</div>
 
 	<footer class="run">
 		<div class="run-line">
@@ -298,14 +257,6 @@
 		min-width: 0;
 	}
 
-	.result-mark {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-bottom: 8px;
-	}
-
-
 	.head h1 {
 		font-size: clamp(28px, 5vw, 34px);
 		line-height: 1.08;
@@ -327,17 +278,9 @@
 
 	.layout {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr);
 		gap: 16px;
 		align-items: start;
-		min-width: 0;
-	}
-
-	.side,
-	.stack {
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
 		min-width: 0;
 	}
 
@@ -523,7 +466,6 @@
 		color: color-mix(in srgb, var(--warn) 55%, var(--tech-ink));
 	}
 
-	.card,
 	.pane {
 		display: flex;
 		flex-direction: column;
@@ -535,19 +477,39 @@
 		min-width: 0;
 	}
 
-	.card-head,
 	.pane-head {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
 		flex-wrap: wrap;
 		min-width: 0;
 	}
 
-	h3 {
+	.file-title {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+
+	.file-title .meta {
+		margin-top: 0;
+	}
+
+	.file-title h2 {
 		font-size: 13px;
 		font-weight: 600;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	.meta {
@@ -563,6 +525,7 @@
 
 	.actions {
 		display: flex;
+		margin-left: auto;
 		gap: 8px;
 		flex-shrink: 0;
 	}
@@ -612,10 +575,14 @@
 
 	.checks {
 		min-width: 0;
+		background: var(--surface);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		padding: 14px 18px;
 	}
 
 	.checks-title {
-		margin-bottom: 2px;
+		margin-bottom: 4px;
 		font-size: 10px;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
@@ -664,6 +631,7 @@
 
 	.tabs {
 		display: flex;
+		flex-shrink: 0;
 		gap: 4px;
 		padding: 4px;
 		background: var(--surface-2);
@@ -673,6 +641,7 @@
 	.tab {
 		flex: 1;
 		min-height: 44px;
+		padding: 0 12px;
 		background: transparent;
 		color: var(--ink-2);
 		border: 0;
@@ -727,6 +696,7 @@
 
 	.ghost:hover {
 		background: var(--surface-2);
+		color: var(--ink);
 		text-decoration: none;
 	}
 
@@ -763,6 +733,51 @@
 		font-size: 14px;
 		color: var(--ink);
 		overflow-wrap: anywhere;
+	}
+
+	@media (min-width: 640px) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		.tech {
+			grid-column: 1;
+			grid-row: 1;
+		}
+
+		.pane {
+			grid-column: 2;
+			grid-row: 1;
+		}
+
+		.checks {
+			grid-column: 1 / -1;
+			grid-row: 2;
+		}
+
+		.checks dl {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px 18px;
+		}
+
+		.checks dl > div {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 2px;
+			padding: 0;
+			border-bottom: 0;
+		}
+
+		.checks dd {
+			text-align: left;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.checks dl {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
 	}
 
 	@media (max-width: 639.98px) {

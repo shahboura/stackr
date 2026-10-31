@@ -30,6 +30,20 @@ trap we already hit, or something deliberately rejected.
 13. **Named steps, five segments, no percentage.**
 14. **The summary is pinned and live** at every step.
 15. **Disable impossible choices with an inline reason** instead of rejecting at the end.
+16. **Category is metadata, not a filter.** Nine services do not need a segmented filter; the
+    category is shown on the card (`MEDIA · :8096`) and remains searchable.
+17. **`/` focuses catalog search.** Escape clears it. The shortcut is ignored inside inputs,
+    textareas, selects and contenteditable regions; the keycap hint is hidden on touch.
+18. **One file pane at every width.** The result screen tabs `compose.yaml` / `.env` inside
+    the file card, so the download label always names the visible file. There is no
+    desktop-only two-card layout to drift out of sync.
+19. **Reference material can be disclosed; decisions cannot.** Environment rows, folder
+    commands and the mount check live in labeled native `<details>`; the choice, the
+    consequences and the download stay visible.
+20. **One wordmark in the header, on every route.** `/build` used to swap it for a text
+    “Catalog” link and repeat the mark inside the page; that made the flow look like a
+    different site. The header wordmark is the only home affordance; “Back” and “Back to
+    catalog” remain the in-flow exits.
 
 ## 2. Content and SEO
 
@@ -87,6 +101,9 @@ trap we already hit, or something deliberately rejected.
 - `adapter-static` config: `{ pages: 'dist', assets: 'dist', fallback: undefined }`.
 - Prerender: `export const prerender = true` in `src/routes/+layout.ts`.
 - bun: `bun run --cwd <dir> <script>` — the flag goes **after** `run`, not before.
+- **TypeScript stays on 6.x for now.** Kit 3.1.1 peers on `^6.0.0`; TypeScript 7 makes
+  `svelte-kit sync` fail in `write_tsconfig` (`Cannot read properties of undefined
+  (reading 'readFile')`). Revisit when Kit widens the range.
 
 ## 5. Deliberately rejected — do not add
 
@@ -100,6 +117,7 @@ trap we already hit, or something deliberately rejected.
 | Interactive diagram (click a node to edit) | Expensive half of that screen |
 | argon2 / bcrypt | Needs WASM; only Vaultwarden and htpasswd use it. Lazy chunk later |
 | Search index, Pagefind, Fuse | A filter over <60 items is instant |
+| Category filter control | Category is metadata; the search field already matches it |
 | Tailwind, any component library | Bespoke design; scoped CSS plus tokens |
 | Accounts, telemetry, analytics, i18n | Not the product |
 | Reverse proxy / tunnel generation | LAN only in v1 |

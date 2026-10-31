@@ -192,7 +192,7 @@ lives in `.env` comments and on the service page instead.
    3. Ports → collisions, remap suggestion
    4. Services needing input → API keys, admin email, TZ (auto-detected)
    5. Review → conflicts, generated secret count, warnings
-3. **Result** — two file cards + dark technical card + download.
+3. **Result** — one tabbed file card (`compose.yaml` / `.env`) + dark technical card + checks strip + download.
 
 Rules baked in from the design review:
 - Summary stays pinned; never scrolls away.

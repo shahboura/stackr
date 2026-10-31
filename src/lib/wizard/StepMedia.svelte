@@ -50,12 +50,6 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 </script>
 
 <section class="step">
-	<h2>Where should the files live?</h2>
-	<p class="lede">
-		One folder holds downloads, the library and app config. That is what lets the arr apps hardlink a
-		finished download instead of copying it.
-	</p>
-
 	{#if !usesMedia}
 		<div class="card">
 			<h3>No media folder needed</h3>
@@ -86,7 +80,8 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 			<span class="mono label">Layout</span>
 			<span class="mono label">one filesystem</span>
 		</div>
-		<pre class="mono tree">{tree}</pre>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<pre class="mono tree" tabindex="0" role="region" aria-label="Media folder layout">{tree}</pre>
 	</div>
 
 	<div class="options" role="radiogroup" aria-label="Storage layout">
@@ -105,22 +100,49 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 		{/each}
 	</div>
 
-	<div class="card">
-		<h3>Check the mount before you download</h3>
-		<p>
-			Hardlinks only work when the download folder and the library are on the same filesystem. Run this
-			after creating the folders — the two numbers must match:
-		</p>
-		<pre class="mono stat">stat -c %d {shellQuote(`${answers.dataDir}/downloads`)} {shellQuote(`${answers.dataDir}/media`)}</pre>
-		<p class="muted">
-			Different numbers mean Sonarr and Radarr will copy every import. The stack still works; the disk
-			usage doubles.
-		</p>
-		<div class="cmd">
-			<pre class="mono">{commands}</pre>
-			<CopyButton text={commands} label="Copy commands" />
+	<details class="card prep-card">
+		<summary class="prep-summary">
+			<span class="prep-title">Before you run compose</span>
+			<span class="mono label">folders + mount check</span>
+			<span class="prep-chev" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+					<path d="m6 9 6 6 6-6" />
+				</svg>
+			</span>
+		</summary>
+
+		<div class="prep-body">
+			<div class="prep-step">
+				<span class="mono label">1 · Create the folders</span>
+				<p>
+					Docker creates missing bind-mount folders as root. Create them first and give them to your
+					user:
+				</p>
+				<details class="advanced">
+					<summary>Show the folder command</summary>
+					<div class="cmd">
+						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+						<pre class="mono" tabindex="0" role="region" aria-label="Folder setup commands">{commands}</pre>
+						<CopyButton text={commands} label="Copy commands" />
+					</div>
+				</details>
+			</div>
+
+			<div class="prep-step">
+				<span class="mono label">2 · Check the mount</span>
+				<p>
+					Hardlinks only work when the download folder and the library are on the same filesystem. The
+					two numbers must match:
+				</p>
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<pre class="mono stat" tabindex="0" role="region" aria-label="Hardlink filesystem check">stat -c %d {shellQuote(`${answers.dataDir}/downloads`)} {shellQuote(`${answers.dataDir}/media`)}</pre>
+				<p class="muted">
+					Different numbers mean Sonarr and Radarr will copy every import. The stack still works; the
+					disk usage doubles.
+				</p>
+			</div>
 		</div>
-	</div>
+	</details>
 	{/if}
 </section>
 
@@ -128,21 +150,7 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 	.step {
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
-	}
-
-	h2 {
-		font-size: clamp(26px, 3.4vw, 34px);
-		line-height: 1.1;
-		letter-spacing: -0.03em;
-		font-weight: 600;
-	}
-
-	.lede {
-		color: var(--ink-2);
-		font-size: 17px;
-		max-width: 62ch;
-		margin-top: -10px;
+		gap: 18px;
 	}
 
 	.card {
@@ -150,6 +158,55 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 		border-radius: var(--radius);
 		box-shadow: var(--shadow);
 		padding: 18px 20px;
+	}
+
+	.prep-card {
+		padding: 6px 20px;
+	}
+
+	.prep-summary {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-height: 56px;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.prep-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.prep-title {
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.prep-summary .label {
+		margin-left: auto;
+	}
+
+	.prep-chev {
+		display: grid;
+		place-items: center;
+		width: 20px;
+		height: 20px;
+		color: var(--ink-3);
+	}
+
+	.prep-chev svg {
+		width: 16px;
+		height: 16px;
+		transition: transform 0.15s ease;
+	}
+
+	.prep-card[open] .prep-chev svg {
+		transform: rotate(180deg);
+	}
+
+	.prep-body {
+		padding: 4px 0 14px;
+		border-top: 1px solid var(--line-soft);
 	}
 
 	.field {
@@ -214,15 +271,65 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 		max-width: 70ch;
 	}
 
-	.card > p.muted {
-		color: var(--ink-3);
-		font-size: 12.5px;
-	}
-
 	.card > p.error {
 		color: var(--warn);
 		font-size: 12.5px;
 		margin-top: 8px;
+	}
+
+	.prep-step {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.prep-step + .prep-step {
+		margin-top: 14px;
+		padding-top: 14px;
+		border-top: 1px solid var(--line-soft);
+	}
+
+	.prep-step p {
+		max-width: 70ch;
+		font-size: 13px;
+		color: var(--ink-2);
+	}
+
+	.prep-step p.muted {
+		color: var(--ink-3);
+		font-size: 12.5px;
+	}
+
+	.advanced summary {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-height: 44px;
+		color: var(--accent);
+		font-size: 12.5px;
+		font-weight: 500;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.advanced summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.advanced summary::after {
+		content: '▾';
+		margin-left: auto;
+		color: var(--ink-3);
+		font-size: 11px;
+		transition: transform 0.15s ease;
+	}
+
+	.advanced[open] summary::after {
+		transform: rotate(180deg);
+	}
+
+	.advanced[open] summary {
+		color: var(--ink-2);
 	}
 
 	.stat {

@@ -1,34 +1,13 @@
 <script lang="ts">
+	import { serviceMatches } from '#lib/catalog/search';
 	import { catalog } from '#lib/catalog/vite';
 	import { findConflicts } from '#lib/wizard/ports';
 	import { secretCount, selectionUrl } from '#lib/wizard/state';
 
-	const ALL = 'all';
-
-	let active = $state<string>(ALL);
 	let query = $state('');
 	let selected = $state<string[]>([]);
 
-	let categories = $derived(
-		[...new Set(catalog.map((service) => service.category))].sort((a, b) => a.localeCompare(b))
-	);
-
-	let visible = $derived(
-		catalog.filter((service) => {
-			const inCategory = active === ALL || service.category === active;
-			const haystack = [
-				service.name,
-				service.summary,
-				service.category,
-				...service.tags,
-				...service.ports.map(String),
-				...service.deps
-			]
-				.join(' ')
-				.toLowerCase();
-			return inCategory && haystack.includes(query.trim().toLowerCase());
-		})
-	);
+	let visible = $derived(catalog.filter((service) => serviceMatches(service, query)));
 
 	let selectedServices = $derived(
 		selected.flatMap((slug) => {
@@ -39,8 +18,35 @@
 	let conflictCount = $derived(findConflicts(selectedServices, {}).length);
 	let secretTotal = $derived(secretCount(selectedServices));
 
-	const categoryLabel = (category: string): string =>
-		category.charAt(0).toUpperCase() + category.slice(1);
+	function isTyping(target: EventTarget | null): boolean {
+		const element = target as HTMLElement | null;
+		if (!element) return false;
+		return (
+			element.tagName === 'INPUT' ||
+			element.tagName === 'TEXTAREA' ||
+			element.tagName === 'SELECT' ||
+			element.isContentEditable
+		);
+	}
+
+	/** `/` focuses search, the same shortcut GitHub and MDN use for one field. */
+	function onShortcut(event: KeyboardEvent): void {
+		if (
+			event.key !== '/' ||
+			event.ctrlKey ||
+			event.metaKey ||
+			event.altKey ||
+			event.repeat ||
+			event.isComposing ||
+			isTyping(event.target)
+		) {
+			return;
+		}
+		event.preventDefault();
+		const field = document.getElementById('service-search') as HTMLInputElement | null;
+		field?.focus();
+		field?.select();
+	}
 
 	function clearSearch(): void {
 		query = '';
@@ -53,6 +59,8 @@
 			: [...selected, slug];
 	}
 </script>
+
+<svelte:window onkeydown={onShortcut} />
 
 <svelte:head>
 	<title>stackr — compose files that work on the first try</title>
@@ -73,20 +81,6 @@
 	</header>
 
 	<div class="controls">
-		<div class="segmented" role="group" aria-label="Filter by category">
-			<button type="button" aria-pressed={active === ALL} onclick={() => (active = ALL)}>
-				All
-			</button>
-			{#each categories as category (category)}
-				<button
-					type="button"
-					aria-pressed={active === category}
-					onclick={() => (active = category)}
-				>
-					{categoryLabel(category)}
-				</button>
-			{/each}
-		</div>
 		<div class="search">
 			<svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
 				<circle cx="11" cy="11" r="7" />
@@ -97,10 +91,11 @@
 				type="search"
 				placeholder="Search services"
 				aria-label="Search services"
+				aria-keyshortcuts="/"
 				spellcheck="false"
 				bind:value={query}
 				onkeydown={(event) => {
-					if (event.key === 'Escape') query = '';
+					if (event.key === 'Escape' && !event.isComposing) query = '';
 				}}
 			/>
 			{#if query}
@@ -109,6 +104,8 @@
 						<path d="M18 6 6 18M6 6l12 12" />
 					</svg>
 				</button>
+			{:else}
+				<kbd class="key mono" aria-hidden="true">/</kbd>
 			{/if}
 		</div>
 	</div>
@@ -121,9 +118,6 @@
 		<p class="empty">
 			No services match “{query}”.
 			<button type="button" class="link" onclick={clearSearch}>Clear</button>
-			{#if active !== ALL}
-				<button type="button" class="link" onclick={() => (active = ALL)}>Search all services</button>
-			{/if}
 		</p>
 	{:else}
 	<div class="grid">
@@ -133,9 +127,6 @@
 				type="button"
 				class="card"
 				aria-pressed={isSelected}
-				aria-label={`${isSelected ? 'Remove' : 'Add'} ${service.name} ${
-					isSelected ? 'from' : 'to'
-				} the stack`}
 				onclick={() => toggle(service.slug)}
 			>
 				<span class="icon">
@@ -152,7 +143,11 @@
 						</span>
 					{/if}
 					<span class="foot">
-						<span class="tag mono">{service.ports.length ? `:${service.ports[0]}` : service.ram}</span>
+						<span class="tags mono">
+							<span class="cat">{service.category}</span>
+							<span class="tag-sep" aria-hidden="true">·</span>
+							<span>{service.ports.length ? `:${service.ports[0]}` : service.ram}</span>
+						</span>
 						<span class="action">{isSelected ? 'Added' : 'Add'}</span>
 					</span>
 				</span>
@@ -240,7 +235,7 @@
 
 	.search {
 		position: relative;
-		width: min(260px, 100%);
+		width: min(320px, 100%);
 	}
 
 	.search input {
@@ -299,6 +294,24 @@
 		height: 14px;
 	}
 
+	.key {
+		position: absolute;
+		right: 12px;
+		top: 50%;
+		display: grid;
+		place-items: center;
+		width: 22px;
+		height: 22px;
+		transform: translateY(-50%);
+		border: 1px solid var(--line);
+		border-radius: 5px;
+		background: var(--surface-2);
+		color: var(--ink-3);
+		font-size: 11px;
+		line-height: 1;
+		pointer-events: none;
+	}
+
 	.sr-only {
 		position: absolute;
 		width: 1px;
@@ -328,40 +341,6 @@
 		font-size: inherit;
 		text-decoration: underline;
 	}
-
-	.segmented {
-		display: inline-flex;
-		gap: 2px;
-		padding: 2px;
-		background: var(--surface-2);
-		border-radius: 9px;
-	}
-
-	.segmented button {
-		min-height: 44px;
-		padding: 0 14px;
-		border: 0;
-		border-radius: 7px;
-		background: transparent;
-		color: var(--ink-2);
-		font-size: 13px;
-		font-weight: 500;
-		line-height: 1;
-		transition:
-			background 0.15s ease,
-			color 0.15s ease;
-	}
-
-	.segmented button:hover {
-		color: var(--ink);
-	}
-
-	.segmented button[aria-pressed='true'] {
-		background: var(--seg-active);
-		color: var(--ink);
-		box-shadow: var(--shadow);
-	}
-
 
 	.grid {
 		display: grid;
@@ -447,9 +426,22 @@
 		margin-top: 2px;
 	}
 
-	.tag {
-		font-size: 11px;
+	.tags {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		min-width: 0;
+		font-size: 10.5px;
 		color: var(--ink-3);
+	}
+
+	.cat {
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+
+	.tag-sep {
+		color: var(--line);
 	}
 
 	.action {
@@ -584,6 +576,10 @@
 			font-size: 12px;
 		}
 
+		.key {
+			display: none;
+		}
+
 		.bag {
 			bottom: 12px;
 			margin: 0 12px 12px;
@@ -605,6 +601,12 @@
 
 		.cta {
 			padding: 0 18px;
+		}
+	}
+
+	@media (hover: none) and (pointer: coarse) {
+		.key {
+			display: none;
 		}
 	}
 </style>

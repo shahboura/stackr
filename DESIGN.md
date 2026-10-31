@@ -86,51 +86,65 @@ Line height 1.5 for body, 1.03–1.08 for display.
 - Wordmark: Inter Variable, 600, 16px, tracking `-0.03em`. The `s` is drawn at
   Inter's x-height so it can stand alone; only the final `r` is accented.
 - Favicon: the mark alone on a `#fbfbfd` tile.
+- The header wordmark is the only home affordance on every route, including `/build`.
+  Do not replace it with a text “Catalog” link; the wizard keeps its Back button and the
+  result keeps “Back to catalog”. In-page wordmarks are decoration, not navigation.
 
 ## 4. Screens
 
 ### Catalog
 - Centred hero: display h1 + one-sentence lede, max 52ch.
-- **Segmented control** for filters (not pill chips): track `--surface-2`, active segment
-  `--seg-active` + shadow, radius 9.
-- A search field beside the filters searches name, summary, tags, ports and dependencies;
-  a 44px × clears it, Escape clears it, and the active category is never silently reset.
+- One search field centred under the lede; `/` focuses it and Escape clears it. There is
+  no category filter: category is metadata on every card (`MEDIA · :8096`) and stays
+  searchable. The field shows a `/` keycap until it has a query; the keycap is hidden
+  on touch widths.
 - Card grid: 4 columns ≥1024px, 2 columns ≥640px, 2 columns on phone (never 1 — the cards
   are small enough and 8 services should fit in one thumb-scroll).
 - Card: 18px radius, `--surface`, shadow, no border. Contents: 58px icon tile, name 15/600,
-  one line ≤7 words, one technical tag (port or requirement), and an `Add` / `Added` text
-  action. Selected cards get a 20px blue check badge top-right — not a coloured border.
+  one line ≤7 words, one metadata line (category · port, or category · RAM), and an
+  `Add` / `Added` text action. Selected cards get a 20px blue check badge top-right — not a
+  coloured border.
 - **Bag bar** pinned to the bottom: blurred surface, 1px top rule, `N services` + conflict
   count on the left, blue pill CTA on the right. It replaces a cart page.
 
 ### Wizard
-- Two columns: **preview left (flex 1)**, **options right (520px)**.
-- Preview panel is `--surface-2`, radius 20; inside it a white code card showing the *real*
+- A full-width step header above both columns: the question on the left, the explanatory
+  note on the right (stacked below 1024px). The preview card and the first option card
+  therefore share a top edge.
+- Two columns below the header: **preview left (flex 1)**, **options right (520px)**.
+- Preview is the real white code card, with no outer mat; inside it shows the *real*
   generated YAML. Never a stylised mock — credibility depends on it being the artifact.
+- Below 1024px the preview collapses to a 56px `Preview · compose.yaml · Show` bar, so the
+  first question stays near the top. Code is capped at ~56vh on desktop.
 - Options: radio rows separated by 1px `--line-soft`. Selected = 5px blue ring on the radio.
 - Footer status bar: `Ports — no conflicts · Hardlinks — one mount · Secrets — 4`, then the CTA.
 - Progress: five segments + `Step 3 of 5`. No percentages.
+- Reference material (environment variables, folder commands) uses native `<details>`,
+  labelled with what is inside; the decision itself stays visible.
 
 ### Result
-- Two columns: **dark technical card left**, **file cards + checks right**.
+- Two columns: **dark technical card left**, **one file card right**; the Checks strip
+  spans the full width beneath both.
 - Technical card: topology diagram (nodes = rects with name, image tag, port), generated
   secrets beneath a rule, all in JetBrains Mono.
-- File cards: `compose.yaml` and `.env`, each with size/meta and a text action.
-- Checks list: Ports / Hardlinks / Volumes / Generated in browser — value in `--ok`.
+- File card: the tab strip (`compose.yaml` / `.env`) lives inside the card head, so the
+  card still top-aligns with the technical card. One pane at every width, with meta, hint,
+  copy and download. Both download buttons name the visible file.
+- Checks strip: Ports / Hardlinks / Volumes / Generated in browser — value in `--ok`.
 - Footer: `Run docker compose up -d` with the command in mono, plus the download CTA.
 
 ## 5. Responsive
 
 | Breakpoint | Behaviour |
 |---|---|
-| ≥1024px | As specified above |
-| 640–1023px | Catalog 2 columns; wizard stacks preview **above** options; sidebar becomes a footer status line |
-| <640px | Single column. Bag bar becomes a floating pill. Footer status collapses to one line (`Ports — ok`) before the CTA |
+| ≥1024px | As specified above; preview expanded; checks strip 4-up |
+| 640–1023px | Catalog 2 columns; wizard preview is a collapsed bar above options; result keeps two columns and a 2-up checks strip |
+| <640px | Single column. Bag bar becomes a floating pill. Wizard preview stays collapsed. Footer status collapses to one line (`Ports — ok`) before the CTA |
 
 **The result screen does not shrink — it changes shape.** Below 640px the topology diagram is
 replaced by a **vertical spine**: services stacked down one trunk line, port right-aligned,
-the shared volume as a dashed card. Same information on one axis instead of two. Tabs
-(`compose.yaml` / `.env`) replace the two-column layout.
+the shared volume as a dashed card. The file tabs stay inside the file card at every width;
+only the column count and topology shape change.
 
 Touch targets ≥ 44px. No horizontal scroll at 375px.
 
