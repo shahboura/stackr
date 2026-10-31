@@ -3,6 +3,8 @@
 	import type { Answers } from './state';
 	import type { ResolvedVar } from '../compose/emit';
 	import { secretCount } from './state';
+	import { HOSTS } from './presets';
+	import { statCommand } from './host';
 	import { findConflicts, portFields } from './ports';
 
 	let {
@@ -17,6 +19,8 @@
 
 	let fields = $derived(portFields(selected));
 	let conflicts = $derived(findConflicts(selected, answers.ports));
+	let host = $derived(HOSTS.find((preset) => preset.id === answers.host) ?? HOSTS[0]);
+	let mountCheck = $derived(statCommand(host, answers.dataDir));
 	let secretsTotal = $derived(secretCount(selected));
 	let sharedMount = $derived(
 		selected.some((service) => service.composeText.includes('${DATA_DIR}:/data'))
@@ -43,12 +47,6 @@
 </script>
 
 <section class="step">
-	<h2>Review before you download</h2>
-	<p class="lede">
-		Two files come out: a compose file that references variables, and a .env with the values. Keep them
-		in the same folder.
-	</p>
-
 	<div class="stats">
 		<div class="stat">
 			<span class="n">{selected.length}</span>
@@ -64,16 +62,23 @@
 		</div>
 		<div class="stat" class:bad={conflicts.length > 0}>
 			<span class="n">{conflicts.length}</span>
-			<span class="k">conflicts</span>
+			<span class="k">{conflicts.length === 1 ? 'conflict' : 'conflicts'}</span>
 		</div>
 	</div>
 
 	{#if vars.length > 0}
-		<div class="card">
-			<div class="card-head">
+		<details class="card env-card">
+			<summary class="env-summary">
 				<span class="mono label">Environment</span>
-				<span class="mono label">type · default · required</span>
-			</div>
+				<span class="mono env-count">
+					{vars.length} {vars.length === 1 ? 'value' : 'values'} · type · default · required
+				</span>
+				<span class="env-chev" aria-hidden="true">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+						<path d="m6 9 6 6 6-6" />
+					</svg>
+				</span>
+			</summary>
 			<div class="env-scroll">
 				{#each vars as variable (variable.name)}
 					<div class="env-row">
@@ -84,7 +89,7 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		</details>
 	{/if}
 
 	<div class="card">
@@ -139,11 +144,18 @@
 	</div>
 
 	{#if sharedMount}
-		<div class="box">
-			<strong>Hardlinks, one last check.</strong>
-			<code>stat -c %d {answers.dataDir}/downloads {answers.dataDir}/media</code> must print the same number
-			twice. If it does not, imports copy instead of link.
-		</div>
+		{#if host.platform === 'desktop'}
+			<div class="box danger">
+				<strong>{host.name} runs Docker Desktop.</strong>
+				{host.caution}
+			</div>
+		{:else if mountCheck}
+			<div class="box">
+				<strong>Hardlinks, one last check.</strong>
+				<code>{mountCheck}</code> must print the same number twice. If it does not, imports copy instead
+				of link.
+			</div>
+		{/if}
 	{/if}
 </section>
 
@@ -154,23 +166,9 @@
 		gap: 14px;
 	}
 
-	h2 {
-		font-size: clamp(26px, 3.4vw, 34px);
-		line-height: 1.1;
-		letter-spacing: -0.03em;
-		font-weight: 600;
-	}
-
-	.lede {
-		color: var(--ink-2);
-		font-size: 17px;
-		max-width: 62ch;
-		margin-top: -6px;
-	}
-
 	.stats {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 10px;
 	}
 
@@ -187,8 +185,51 @@
 		box-shadow: inset 0 0 0 1px var(--warn), var(--shadow);
 	}
 
+	.env-card {
+		padding: 6px 20px;
+	}
+
+	.env-summary {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-height: 56px;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.env-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.env-count {
+		margin-left: auto;
+		font-size: 10px;
+		color: var(--ink-3);
+		text-align: right;
+	}
+
+	.env-chev {
+		display: grid;
+		place-items: center;
+		width: 20px;
+		height: 20px;
+		color: var(--ink-3);
+	}
+
+	.env-chev svg {
+		width: 16px;
+		height: 16px;
+		transition: transform 0.15s ease;
+	}
+
+	.env-card[open] .env-chev svg {
+		transform: rotate(180deg);
+	}
+
 	.env-scroll {
-		margin-top: 8px;
+		padding-bottom: 6px;
+		border-top: 1px solid var(--line-soft);
 	}
 
 	.env-row {
@@ -335,5 +376,15 @@
 		font-family: var(--mono);
 		font-size: 0.94em;
 		word-break: break-all;
+	}
+
+	@media (max-width: 639px) {
+		.stats {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.env-count {
+			font-size: 10px;
+		}
 	}
 </style>

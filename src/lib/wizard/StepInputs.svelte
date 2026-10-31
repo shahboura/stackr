@@ -40,12 +40,6 @@
 </script>
 
 <section class="step">
-	<h2>Anything only you can answer?</h2>
-	<p class="lede">
-		Time zone is the only input. Secrets are generated here, in this browser, and shown in full — there
-		is nothing to write down from a log.
-	</p>
-
 	<div class="card">
 		<div class="card-head">
 			<span class="mono label">Clock</span>
@@ -114,20 +108,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 18px;
-	}
-
-	h2 {
-		font-size: clamp(26px, 3.4vw, 34px);
-		line-height: 1.1;
-		letter-spacing: -0.03em;
-		font-weight: 600;
-	}
-
-	.lede {
-		color: var(--ink-2);
-		font-size: 17px;
-		max-width: 62ch;
-		margin-top: -8px;
 	}
 
 	.card {

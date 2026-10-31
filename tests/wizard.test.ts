@@ -55,6 +55,13 @@ describe('wizard state', () => {
 		expect(dirs).not.toContain('/srv/media/appdata/immich/postgres');
 	});
 
+	test('Windows data dirs keep the drive prefix', () => {
+		const selected = bySlug(catalog, 'jellyfin');
+		expect(dataDirs(selected, 'C:/Users/Public/media')).toContain(
+			'C:/Users/Public/media/appdata/jellyfin'
+		);
+	});
+
 	test('default ports do not collide; a collision is detected before the result', () => {
 		const answers = initialAnswers(media);
 		expect(findConflicts(media, answers.ports)).toEqual([]);
@@ -77,6 +84,21 @@ describe('wizard state', () => {
 		expect(isValidDataDir('/srv/media:1')).toBe(false);
 		expect(isValidDataDir('/srv/$media')).toBe(false);
 		expect(isValidDataDir('/srv/my media')).toBe(true);
+		expect(isValidDataDir('C:/Users/Public/media', 'windows')).toBe(true);
+		expect(isValidDataDir('C:\\Users\\Public\\media', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/', 'windows')).toBe(false);
+		expect(isValidDataDir('/srv/media', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/Pub|lic', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a?', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a.', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a ', 'windows')).toBe(false);
+		expect(isValidDataDir('/Users/Shared/media', 'macos')).toBe(true);
+	});
+
+	test('host presets seed the right path for each platform', () => {
+		expect(initialAnswers(media, 'windows').dataDir).toBe('C:/Users/Public/media');
+		expect(initialAnswers(media, 'macos').dataDir).toBe('/Users/Shared/media');
+		expect(initialAnswers(media, 'windows').puid).toBe('1000');
 	});
 
 	test('shell quoting keeps spaces and apostrophes literal', () => {
