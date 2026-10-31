@@ -116,6 +116,9 @@ trap we already hit, or something deliberately rejected.
 - **TypeScript stays on 6.x for now.** Kit 3.1.1 peers on `^6.0.0`; TypeScript 7 makes
   `svelte-kit sync` fail in `write_tsconfig` (`Cannot read properties of undefined
   (reading 'readFile')`). Revisit when Kit widens the range.
+- **Service guide pages hydrate the shared header.** They stay complete prerendered HTML
+  with JS off, but `csr = false` made the theme switch inert. Keep `csr = true` on
+  `services/[slug]` unless the theme control is removed from the layout there.
 
 ## 5. Deliberately rejected — do not add
 
