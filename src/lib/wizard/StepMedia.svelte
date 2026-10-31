@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { Service } from '../catalog/parse';
 	import type { Answers } from './state';
-	import { dataDirs, isValidDataDir, shellQuote } from './state';
-	import { LAYOUTS } from './presets';
+	import { dataDirs, isValidDataDir } from './state';
+	import { HOSTS, LAYOUTS } from './presets';
+	import { setupCommand, statCommand } from './host';
 	import OptionRow from '../ui/OptionRow.svelte';
 	import CopyButton from '../ui/CopyButton.svelte';
 
@@ -15,10 +16,13 @@
 	} = $props();
 
 	const layout = LAYOUTS[0];
+	let preset = $derived(HOSTS.find((host) => host.id === answers.host) ?? HOSTS[0]);
 	let usesMedia = $derived(selected.some((service) => service.vars.includes('DATA_DIR')));
 
 	function normalize(): void {
-		answers.dataDir = answers.dataDir.trim().replace(/\/+$/, '');
+		let value = answers.dataDir.trim();
+		if (preset?.id === 'windows') value = value.replace(/\\/g, '/');
+		answers.dataDir = value.replace(/\/+$/, '');
 	}
 
 	let commands = $derived.by(() => {
@@ -34,9 +38,15 @@
 		const folders = [...new Set([...base, ...dataDirs(selected, answers.dataDir)])].sort();
 		const puid = /^\d{1,10}$/.test(answers.puid) ? answers.puid : '1000';
 		const pgid = /^\d{1,10}$/.test(answers.pgid) ? answers.pgid : '1000';
-		return `mkdir -p ${folders.map(shellQuote).join(' ')}
-sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
+		return setupCommand(preset, folders, answers.dataDir, puid, pgid);
 	});
+
+	let mountCheck = $derived(statCommand(preset, answers.dataDir));
+	let layoutConsequence = $derived(
+		preset?.platform === 'desktop'
+			? 'Sonarr, Radarr and qBittorrent see the same folder, but hardlinks still depend on the Docker Desktop VM.'
+			: layout.consequence
+	);
 
 	let tree = $derived(`${answers.dataDir}
 ├── appdata/     one folder per container
@@ -69,16 +79,16 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 				autocomplete="off"
 				bind:value={answers.dataDir}
 				onblur={normalize}
-				placeholder="/srv/media"
+				placeholder={preset?.dataDir}
 			/>
 		</label>
-		{#if !isValidDataDir(answers.dataDir)}
-			<p class="error">Use an absolute path without a trailing slash, like /srv/media.</p>
+		{#if !isValidDataDir(answers.dataDir, answers.host)}
+			<p class="error">Use an absolute path without a trailing slash, like {preset?.dataDir}.</p>
 		{/if}
 
 		<div class="tree-head">
 			<span class="mono label">Layout</span>
-			<span class="mono label">one filesystem</span>
+			<span class="mono label">{preset?.platform === 'desktop' ? 'one local disk' : 'one filesystem'}</span>
 		</div>
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<pre class="mono tree" tabindex="0" role="region" aria-label="Media folder layout">{tree}</pre>
@@ -89,7 +99,7 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 			<OptionRow
 				group="layout"
 				name={option.name}
-				consequence={option.consequence}
+				consequence={option.id === layout.id ? layoutConsequence : option.consequence}
 				cost={option.cost}
 				active={option.id === layout.id}
 				disabled={option.id !== layout.id}
@@ -103,7 +113,9 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 	<details class="card prep-card">
 		<summary class="prep-summary">
 			<span class="prep-title">Before you run compose</span>
-			<span class="mono label">folders + mount check</span>
+			<span class="mono label">
+				{preset?.platform === 'desktop' ? 'folders + hardlink warning' : 'folders + mount check'}
+			</span>
 			<span class="prep-chev" aria-hidden="true">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
 					<path d="m6 9 6 6 6-6" />
@@ -115,8 +127,7 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 			<div class="prep-step">
 				<span class="mono label">1 · Create the folders</span>
 				<p>
-					Docker creates missing bind-mount folders as root. Create them first and give them to your
-					user:
+					Create the folders first so Docker does not create them as root:
 				</p>
 				<details class="advanced">
 					<summary>Show the folder command</summary>
@@ -129,17 +140,23 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 			</div>
 
 			<div class="prep-step">
-				<span class="mono label">2 · Check the mount</span>
-				<p>
-					Hardlinks only work when the download folder and the library are on the same filesystem. The
-					two numbers must match:
-				</p>
-				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-				<pre class="mono stat" tabindex="0" role="region" aria-label="Hardlink filesystem check">stat -c %d {shellQuote(`${answers.dataDir}/downloads`)} {shellQuote(`${answers.dataDir}/media`)}</pre>
-				<p class="muted">
-					Different numbers mean Sonarr and Radarr will copy every import. The stack still works; the
-					disk usage doubles.
-				</p>
+				<span class="mono label">2 · {preset?.platform === 'desktop' ? 'Hardlink limit' : 'Check the mount'}</span>
+				{#if preset?.platform === 'desktop'}
+					<p class="caution">
+						{preset.caution}
+					</p>
+				{:else if mountCheck}
+					<p>
+						Hardlinks only work when the download folder and the library are on the same filesystem.
+						The two numbers must match:
+					</p>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre class="mono stat" tabindex="0" role="region" aria-label="Hardlink filesystem check">{mountCheck}</pre>
+					<p class="muted">
+						Different numbers mean Sonarr and Radarr will copy every import. The stack still works; the
+						disk usage doubles.
+					</p>
+				{/if}
 			</div>
 		</div>
 	</details>
@@ -298,6 +315,14 @@ sudo chown -R ${puid}:${pgid} ${shellQuote(answers.dataDir)}`;
 	.prep-step p.muted {
 		color: var(--ink-3);
 		font-size: 12.5px;
+	}
+
+	.prep-step p.caution {
+		padding-left: 10px;
+		border-left: 2px solid var(--warn);
+		color: var(--warn);
+		font-size: 12.5px;
+		line-height: 1.5;
 	}
 
 	.advanced summary {

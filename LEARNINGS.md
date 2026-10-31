@@ -44,6 +44,18 @@ trap we already hit, or something deliberately rejected.
     “Catalog” link and repeat the mark inside the page; that made the flow look like a
     different site. The header wordmark is the only home affordance; “Back” and “Back to
     catalog” remain the in-flow exits.
+21. **The theme control cycles one icon.** Order is system → dark → light → system. The
+    accessible name states the current mode and the next one; there is no three-button pill.
+22. **Host is self-describing.** The Host step has no visible question or note; the five
+    preset tabs and the progress label carry it. A screen-reader-only `h2` keeps the heading
+    order. Do **not** auto-select the browser OS: the host is often a remote NAS/server, not
+    the device doing the browsing.
+23. **Docker Desktop is not hardlink-safe by default.** Windows and macOS presets share a
+    folder through a VM, so imports may copy. Their setup commands are PowerShell or
+    chown-free POSIX, their host `stat` check is not offered, and every surface says
+    “may copy”/carries the warning. Never claim one mount means hardlinks work there.
+24. **The sticky preview is deliberate.** At ≥1024px the generated artifact stays in view
+    while the options column scrolls, like a configurator. Below 1024px it collapses instead.
 
 ## 2. Content and SEO
 
@@ -118,6 +130,8 @@ trap we already hit, or something deliberately rejected.
 | argon2 / bcrypt | Needs WASM; only Vaultwarden and htpasswd use it. Lazy chunk later |
 | Search index, Pagefind, Fuse | A filter over <60 items is instant |
 | Category filter control | Category is metadata; the search field already matches it |
+| Auto-selecting the host OS from the browser | The stack usually runs on a NAS/server, not the browsing device |
+| Calling Docker Desktop “hardlink-safe” | File sharing goes through a VM; imports may copy |
 | Tailwind, any component library | Bespoke design; scoped CSS plus tokens |
 | Accounts, telemetry, analytics, i18n | Not the product |
 | Reverse proxy / tunnel generation | LAN only in v1 |

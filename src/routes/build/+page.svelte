@@ -13,6 +13,8 @@
 	import StepReview from '#lib/wizard/StepReview.svelte';
 	import ResultView from '#lib/ui/ResultView.svelte';
 	import { findConflicts, isValidPort, portFields, portValue } from '#lib/wizard/ports';
+	import { HOSTS } from '#lib/wizard/presets';
+	import { hardlinkStatus } from '#lib/wizard/host';
 	import {
 		buildValues,
 		detectTimezone,
@@ -31,8 +33,8 @@
 	const CTA_LABELS = ['Continue', 'Continue', 'Continue', 'Review', 'Continue'];
 	const STEP_COPY = [
 		{
-			title: 'Where does this stack run?',
-			note: 'The preset only fills in paths and user IDs. Nothing is installed or changed on the host from this page.'
+			title: '',
+			note: ''
 		},
 		{
 			title: 'Where should the files live?',
@@ -118,6 +120,13 @@
 	let sharedMount = $derived(
 		selected.some((service) => service.composeText.includes('${DATA_DIR}:/data'))
 	);
+	let host = $derived(HOSTS.find((preset) => preset.id === answers.host) ?? HOSTS[0]);
+	let hardlinks = $derived(hardlinkStatus(host, sharedMount));
+	let stepNote = $derived(
+		step === 1 && host.platform === 'desktop'
+			? 'One folder holds downloads, the library and app config. Docker Desktop shares it through a VM, so imports may copy instead of hardlink.'
+			: STEP_COPY[step].note
+	);
 
 	let preview = $derived.by(() => {
 		try {
@@ -149,7 +158,7 @@
 
 	let stepValid = $derived.by(() => {
 		if (step === 0) return isValidId(answers.puid) && isValidId(answers.pgid) && isValidUmask(answers.umask);
-		if (step === 1) return isValidDataDir(answers.dataDir);
+		if (step === 1) return isValidDataDir(answers.dataDir, answers.host);
 		if (step === 2) {
 			return (
 				conflicts.length === 0 &&
@@ -167,7 +176,7 @@
 			return (
 				conflicts.length === 0 &&
 				fields.every((field) => isValidPort(portValue(field, answers.ports))) &&
-				isValidDataDir(answers.dataDir) &&
+				isValidDataDir(answers.dataDir, answers.host) &&
 				isValidId(answers.puid) &&
 				isValidId(answers.pgid) &&
 				isValidUmask(answers.umask) &&
@@ -315,10 +324,14 @@
 			<span class="step-count mono">Step {step + 1} of 5 · {STEPS[step]}</span>
 		</div>
 
-		<header class="step-head">
-			<h2 id="step-title" tabindex="-1">{STEP_COPY[step].title}</h2>
-			<p class="step-note">{STEP_COPY[step].note}</p>
-		</header>
+		{#if STEP_COPY[step].title}
+			<header class="step-head">
+				<h2 id="step-title" tabindex="-1">{STEP_COPY[step].title}</h2>
+				<p class="step-note">{stepNote}</p>
+			</header>
+		{:else}
+			<h2 id="step-title" class="sr-only" tabindex="-1">{STEPS[step]}</h2>
+		{/if}
 
 		<div class="wizard">
 			<aside class="preview" aria-label="Generated compose preview">
@@ -420,7 +433,11 @@
 				<span class="wide">Ports — {portsSummary}</span>
 				<span class="ports-short">Ports — {portsSummaryShort}</span>
 				<span class="dot wide">·</span>
-				<span class="wide">Hardlinks — {sharedMount ? 'one mount' : 'not used'}</span>
+				<span class="wide" class:warn={hardlinks === 'may copy'}>Hardlinks — {hardlinks}</span>
+				{#if hardlinks === 'may copy'}
+					<span class="dot links-short" aria-hidden="true">·</span>
+					<span class="links-short warn">Links — may copy</span>
+				{/if}
 				<span class="dot">·</span>
 				<span>Secrets — {secretsTotal}</span>
 			</div>
@@ -674,7 +691,7 @@
 		font-size: 11.5px;
 		line-height: 1.65;
 		color: var(--ink-2);
-		max-height: 280px;
+		max-height: 320px;
 		overflow: auto;
 		white-space: pre;
 	}
@@ -720,7 +737,15 @@
 		color: var(--ink-3);
 	}
 
+	.warn {
+		color: var(--warn);
+	}
+
 	.ports-short {
+		display: none;
+	}
+
+	.links-short {
 		display: none;
 	}
 
@@ -780,7 +805,7 @@
 		}
 
 		.code {
-			max-height: max(220px, 56dvh);
+			max-height: max(240px, 64dvh);
 		}
 	}
 
@@ -794,7 +819,7 @@
 		}
 
 		.code {
-			max-height: 170px;
+			max-height: 220px;
 		}
 
 		.status {
@@ -813,6 +838,10 @@
 		}
 
 		.ports-short {
+			display: inline;
+		}
+
+		.links-short {
 			display: inline;
 		}
 

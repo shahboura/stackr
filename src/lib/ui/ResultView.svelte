@@ -4,6 +4,8 @@
 	import type { Answers } from '../wizard/state';
 	import type { BuildResult } from '../compose/emit';
 	import { findConflicts } from '../wizard/ports';
+	import { HOSTS } from '../wizard/presets';
+	import { hardlinkStatus } from '../wizard/host';
 	import { SECRET_NOTES } from '../secrets/generate';
 	import { redactEnv } from '../compose/redact';
 	import CopyButton from './CopyButton.svelte';
@@ -50,6 +52,8 @@
 	const hasDozzle = $derived(selected.some((service) => service.slug === 'dozzle'));
 	/** Only the arr stack (and qBittorrent) mounts the whole media root at /data. */
 	const sharedMount = $derived(selected.some((service) => service.composeText.includes('${DATA_DIR}:/data')));
+	const host = $derived(HOSTS.find((preset) => preset.id === answers.host) ?? HOSTS[0]);
+	const hardlinks = $derived(hardlinkStatus(host, sharedMount));
 
 	function hostPort(service: Service): number | null {
 		const name = service.portVars[0];
@@ -106,7 +110,9 @@
 				</div>
 				<div>
 					<dt>Hardlinks</dt>
-					<dd class="mono" class:ok={sharedMount}>{sharedMount ? 'one mount' : 'not used'}</dd>
+					<dd class="mono" class:ok={hardlinks === 'one mount'} class:bad={hardlinks === 'may copy'}>
+						{hardlinks}
+					</dd>
 				</div>
 				<div>
 					<dt>Volumes</dt>
@@ -175,6 +181,11 @@
 				{/if}
 			{/if}
 			{@render secretsBlock()}
+			{#if sharedMount && host.platform === 'desktop'}
+				<p class="tech-warn">
+					Docker Desktop: {host.caution}
+				</p>
+			{/if}
 			{#if hasDozzle}
 				<p class="tech-warn">
 					Dozzle mounts the Docker socket: root-equivalent control of the host. Keep its port on

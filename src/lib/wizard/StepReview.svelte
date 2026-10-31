@@ -2,7 +2,9 @@
 	import type { Service } from '../catalog/parse';
 	import type { Answers } from './state';
 	import type { ResolvedVar } from '../compose/emit';
-	import { secretCount, shellQuote } from './state';
+	import { secretCount } from './state';
+	import { HOSTS } from './presets';
+	import { statCommand } from './host';
 	import { findConflicts, portFields } from './ports';
 
 	let {
@@ -17,6 +19,8 @@
 
 	let fields = $derived(portFields(selected));
 	let conflicts = $derived(findConflicts(selected, answers.ports));
+	let host = $derived(HOSTS.find((preset) => preset.id === answers.host) ?? HOSTS[0]);
+	let mountCheck = $derived(statCommand(host, answers.dataDir));
 	let secretsTotal = $derived(secretCount(selected));
 	let sharedMount = $derived(
 		selected.some((service) => service.composeText.includes('${DATA_DIR}:/data'))
@@ -140,11 +144,18 @@
 	</div>
 
 	{#if sharedMount}
-		<div class="box">
-			<strong>Hardlinks, one last check.</strong>
-			<code>stat -c %d {shellQuote(`${answers.dataDir}/downloads`)} {shellQuote(`${answers.dataDir}/media`)}</code> must print the same number
-			twice. If it does not, imports copy instead of link.
-		</div>
+		{#if host.platform === 'desktop'}
+			<div class="box danger">
+				<strong>{host.name} runs Docker Desktop.</strong>
+				{host.caution}
+			</div>
+		{:else if mountCheck}
+			<div class="box">
+				<strong>Hardlinks, one last check.</strong>
+				<code>{mountCheck}</code> must print the same number twice. If it does not, imports copy instead
+				of link.
+			</div>
+		{/if}
 	{/if}
 </section>
 

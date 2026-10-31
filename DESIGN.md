@@ -107,17 +107,28 @@ Line height 1.5 for body, 1.03–1.08 for display.
 - **Bag bar** pinned to the bottom: blurred surface, 1px top rule, `N services` + conflict
   count on the left, blue pill CTA on the right. It replaces a cart page.
 
+### Theme switch
+One 44px icon button in the header cycles **system → dark → light → system**. The icon
+shows the current mode; the accessible name states the current mode and the next one. There
+is no three-button pill.
+
 ### Wizard
-- A full-width step header above both columns: the question on the left, the explanatory
-  note on the right (stacked below 1024px). The preview card and the first option card
-  therefore share a top edge.
+- Step 1 (Host) has no visible question or explanatory note. The progress label and the
+  compact OS preset switch carry it; a screen-reader-only `h2` keeps the heading order.
+- Steps 2–5 use a full-width step header above both columns: the question on the left, the
+  explanatory note on the right (stacked below 1024px). The preview card and the first
+  option card therefore share a top edge.
 - Two columns below the header: **preview left (flex 1)**, **options right (520px)**.
 - Preview is the real white code card, with no outer mat; inside it shows the *real*
   generated YAML. Never a stylised mock — credibility depends on it being the artifact.
+- At ≥1024px the preview is sticky while the options scroll. That is deliberate: the
+  artifact stays in view while the user answers.
 - Below 1024px the preview collapses to a 56px `Preview · compose.yaml · Show` bar, so the
-  first question stays near the top. Code is capped at ~56vh on desktop.
-- Options: radio rows separated by 1px `--line-soft`. Selected = 5px blue ring on the radio.
-- Footer status bar: `Ports — no conflicts · Hardlinks — one mount · Secrets — 4`, then the CTA.
+  first question stays near the top. Code is capped at ~64vh on desktop.
+- Host is a five-up preset switch (Linux, Unraid, Synology, Windows, macOS) with one detail
+  panel; storage layout keeps the radio rows.
+- Footer status bar: `Ports — no conflicts · Hardlinks — one mount/may copy · Secrets — 4`,
+  then the CTA.
 - Progress: five segments + `Step 3 of 5`. No percentages.
 - Reference material (environment variables, folder commands) uses native `<details>`,
   labelled with what is inside; the decision itself stays visible.
@@ -130,7 +141,8 @@ Line height 1.5 for body, 1.03–1.08 for display.
 - File card: the tab strip (`compose.yaml` / `.env`) lives inside the card head, so the
   card still top-aligns with the technical card. One pane at every width, with meta, hint,
   copy and download. Both download buttons name the visible file.
-- Checks strip: Ports / Hardlinks / Volumes / Generated in browser — value in `--ok`.
+- Checks strip: Ports / Hardlinks / Volumes / Generated in browser — value in `--ok`;
+  `Hardlinks — may copy` is shown in `--warn` for Docker Desktop hosts.
 - Footer: `Run docker compose up -d` with the command in mono, plus the download CTA.
 
 ## 5. Responsive
@@ -190,3 +202,5 @@ secret they will regenerate by hand.
 - Put a border on a card.
 - Add skins or themes beyond system / light / dark.
 - Use `--tech-*` tokens outside the technical card.
+- Call a Docker Desktop host “hardlink-safe”. Windows/macOS presets always carry the
+  “may copy” warning until the container filesystem is tested.

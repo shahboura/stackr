@@ -116,15 +116,18 @@ export function detectTimezone(): string {
 
 export const isValidTimezone = (value: string): boolean => /^[A-Za-z0-9_+\-/]+$/.test(value.trim());
 
-export const isValidDataDir = (value: string): boolean =>
-	value.startsWith('/') &&
-	value.length > 1 &&
-	!value.startsWith('//') &&
-	!value.endsWith('/') &&
-	!value.split('/').includes('..') &&
-	!value.includes(':') &&
-	!value.includes('$') &&
-	!/[\x00-\x1f]/.test(value);
+export const isValidDataDir = (value: string, hostId = 'linux'): boolean => {
+	const common =
+		value.length > 1 &&
+		!value.endsWith('/') &&
+		!value.includes('$') &&
+		!/[\x00-\x1f]/.test(value) &&
+		!value.split('/').includes('..');
+	if (hostId === 'windows') {
+		return /^[A-Za-z]:\/[^/]/.test(value) && common && !value.slice(2).includes(':');
+	}
+	return value.startsWith('/') && !value.startsWith('//') && !value.includes(':') && common;
+};
 
 export const isValidId = (value: string): boolean => /^\d{1,10}$/.test(value);
 

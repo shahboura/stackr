@@ -187,7 +187,7 @@ lives in `.env` comments and on the service page instead.
 
 1. **Catalog** — select services; footer pins `N services · conflicts · secrets`.
 2. **Steps** (5, one decision each):
-   1. Where it runs (Linux / Unraid / Synology) → paths, PUID, PGID, umask
+   1. Where it runs (Linux / Unraid / Synology / Windows / macOS) → paths, PUID, PGID, umask; Windows/macOS carry the Docker Desktop hardlink warning
    2. Media layout (`/srv/media` structure) → volumes, hardlink check
    3. Ports → collisions, remap suggestion
    4. Services needing input → API keys, admin email, TZ (auto-detected)
