@@ -8,9 +8,7 @@
 		light: 'light'
 	};
 
-	const applied =
-		typeof document === 'undefined' ? undefined : document.documentElement.dataset.theme;
-	let theme = $state<Theme>(applied === 'light' || applied === 'dark' ? applied : 'system');
+	let theme = $state<Theme>('system');
 	let next = $derived(nextTheme(theme));
 
 	function apply(value: Theme): void {
@@ -29,6 +27,8 @@
 	}
 
 	onMount(() => {
+		const current = document.documentElement.dataset.theme;
+		if (current === 'light' || current === 'dark') theme = current;
 		const sync = (event: StorageEvent): void => {
 			if (event.key !== 'stackr-theme') return;
 			const value: Theme =

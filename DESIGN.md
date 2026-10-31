@@ -39,7 +39,7 @@ Defined in `src/app.css`. Never hardcode a colour in a component.
 | `--line-soft` | `#ececef` | `#232326` |
 | `--accent` | `#0071e3` | `#0a84ff` |
 | `--ok` | `#0a7f4b` | `#30d158` |
-| `--warn` | `#b4611f` | `#ff9f0a` |
+| `--warn` | `#9a4f12` | `#ff9f0a` |
 | `--tech-bg` | `#0b1626` | `#101c2e` |
 | `--tech-line` | `#16324c` | `#23364e` |
 | `--tech-ink` | `#dbeaf7` | `#dbeaf7` |

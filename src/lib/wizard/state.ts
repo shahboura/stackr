@@ -124,7 +124,13 @@ export const isValidDataDir = (value: string, hostId = 'linux'): boolean => {
 		!/[\x00-\x1f]/.test(value) &&
 		!value.split('/').includes('..');
 	if (hostId === 'windows') {
-		return /^[A-Za-z]:\/[^/]/.test(value) && common && !value.slice(2).includes(':');
+		return (
+			/^[A-Za-z]:\/[^/]/.test(value) &&
+			common &&
+			!value.slice(2).includes(':') &&
+			!/[<>"|?*]/.test(value) &&
+			!/[. ]$/.test(value)
+		);
 	}
 	return value.startsWith('/') && !value.startsWith('//') && !value.includes(':') && common;
 };

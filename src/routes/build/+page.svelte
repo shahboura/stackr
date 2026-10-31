@@ -125,7 +125,7 @@
 	let stepNote = $derived(
 		step === 1 && host.platform === 'desktop'
 			? 'One folder holds downloads, the library and app config. Docker Desktop shares it through a VM, so imports may copy instead of hardlink.'
-			: STEP_COPY[step].note
+			: (STEP_COPY[step]?.note ?? '')
 	);
 
 	let preview = $derived.by(() => {
@@ -339,7 +339,7 @@
 					type="button"
 					class="preview-open"
 					bind:this={showPreviewButton}
-					aria-expanded={!previewOpen}
+					aria-expanded={previewOpen}
 					aria-controls="preview-panel"
 					hidden={previewOpen}
 					onclick={openPreview}
@@ -685,6 +685,12 @@
 		font-size: 11.5px;
 	}
 
+	.annotate[aria-pressed='true'] {
+		color: var(--ink);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
 	.code {
 		margin: 0;
 		padding: 14px;
@@ -820,6 +826,8 @@
 
 		.code {
 			max-height: 300px;
+			white-space: pre-wrap;
+			overflow-wrap: anywhere;
 		}
 
 		.status {

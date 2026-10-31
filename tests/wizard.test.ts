@@ -88,6 +88,10 @@ describe('wizard state', () => {
 		expect(isValidDataDir('C:\\Users\\Public\\media', 'windows')).toBe(false);
 		expect(isValidDataDir('C:/', 'windows')).toBe(false);
 		expect(isValidDataDir('/srv/media', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/Pub|lic', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a?', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a.', 'windows')).toBe(false);
+		expect(isValidDataDir('C:/Users/a ', 'windows')).toBe(false);
 		expect(isValidDataDir('/Users/Shared/media', 'macos')).toBe(true);
 	});
 

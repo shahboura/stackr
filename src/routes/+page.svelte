@@ -576,6 +576,11 @@
 			font-size: 12px;
 		}
 
+		.foot {
+			flex-wrap: wrap;
+			row-gap: 4px;
+		}
+
 		.key {
 			display: none;
 		}

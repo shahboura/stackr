@@ -55,6 +55,7 @@
 				<button
 					type="button"
 					class="host-tab"
+					aria-controls="host-detail"
 					aria-pressed={answers.host === host.id}
 					onclick={() => choose(host)}
 				>
@@ -63,7 +64,13 @@
 			{/each}
 		</div>
 		{#if preset}
-			<div class="host-detail" role="region" aria-label={`${preset.name} preset`}>
+			<div
+				class="host-detail"
+				id="host-detail"
+				role="region"
+				aria-live="polite"
+				aria-label={`${preset.name} preset`}
+			>
 				<p class="consequence">{preset.consequence}</p>
 				<p class="cost">{preset.cost}</p>
 				{#if preset.caution}
@@ -179,6 +186,8 @@
 		font-size: 12.5px;
 		font-weight: 500;
 		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.host-tab:hover {
