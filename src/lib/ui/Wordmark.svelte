@@ -5,7 +5,7 @@
 </script>
 
 <span class="wordmark" style="font-size: {size}px">
-	<Kamon size={Math.round(size * 1.25)} />
+	<Kamon size={size} />
 	<span class="word"><svg
 			class="s"
 			viewBox="12 8 74 88"
@@ -27,7 +27,7 @@
 		white-space: nowrap;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45em;
+		gap: 0.5em;
 	}
 
 	.word {

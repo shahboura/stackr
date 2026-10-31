@@ -81,7 +81,8 @@ Line height 1.5 for body, 1.03–1.08 for display.
   wordmark; it sits to its left.
 - Primary mark: ring + nine tiles. At 16–20px the tiles soften into texture; the
   ring and the blue diamond carry the mark.
-- Lockup: mark at 1.25× the wordmark size, `0.45em` gap, optically centred.
+- Lockup: mark at 1× the wordmark size, `0.5em` gap, optically centred. The mark
+  box, the word box and the cap height share the same centre line.
 - Wordmark: Inter Variable, 600, 16px, tracking `-0.03em`. The `s` is drawn at
   Inter's x-height so it can stand alone; only the final `r` is accented.
 - Favicon: the mark alone on a `#fbfbfd` tile.
